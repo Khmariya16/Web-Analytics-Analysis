@@ -1,0 +1,62 @@
+CREATE TABLE website_traffic (
+    Source_Medium VARCHAR(255),
+    Year1 INT,
+    Month_of_the_year INT,  -- Or INT if it's a number (e.g., 1 for January)
+    Users INT,
+    New_Users INT,
+    Sessions INT,
+    Bounce_Rate FLOAT,
+    Pageviews INT,
+    Avg_Session_Duration VARCHAR(255),  -- In seconds
+    Conversion_Rate_Percent FLOAT, -- Decimal value (e.g., 0.02 for 2%)
+    Transactions INT,
+    Revenue INT,
+    Quantity_Sold INT
+);
+
+select * from website_traffic
+
+--total Users , Sessions and Revenue by Source/Medium
+SELECT Source_Medium, SUM(Users) AS TotalUsers, SUM(Sessions) AS TotalSessions, SUM(Revenue) AS TotalRevenue
+FROM website_traffic
+GROUP BY Source_Medium
+ORDER BY TotalRevenue DESC;
+
+--avg bounce rate and conversion rate by source / medium
+
+select Source_Medium , avg(Bounce_Rate) as AvgbounceRate , avg(Conversion_Rate_Percent) as AvgconversionRate
+from website_traffic
+group by Source_Medium
+order by AvgconversionRate desc
+
+--top month for revenue
+select Month_of_the_year as Revenuemonth , Year1 , sum(Revenue) as TotalRevenue
+from website_traffic
+group by Year1 , Month_of_the_year
+order by TotalRevenue desc
+limit 5
+
+--Revenue per user by source/medium
+
+select Source_Medium , sum(Revenue) / sum(Users) as RevenuePerUser
+from website_traffic
+group by Source_Medium
+order by RevenuePerUser desc
+
+--year-over-year revenue growth by source/medium
+
+SELECT
+    wt.Year1,
+    wt.Source_Medium,
+    SUM(wt.Revenue) AS CurrentYearRevenue,
+    LAG(SUM(wt.Revenue), 1, 0) OVER (PARTITION BY wt.Source_Medium ORDER BY wt.Year1) AS PreviousYearRevenue,
+    (SUM(wt.Revenue) - LAG(SUM(wt.Revenue), 1, 0) OVER (PARTITION BY wt.Source_Medium ORDER BY wt.Year1)) * 100.0 / 
+    NULLIF(LAG(SUM(wt.Revenue), 1, 0) OVER (PARTITION BY wt.Source_Medium ORDER BY wt.Year1), 0) AS YearOverYearGrowth
+FROM website_traffic wt
+GROUP BY wt.Year1, wt.Source_Medium
+ORDER BY wt.Year1, wt.Source_Medium;
+
+
+
+
+
